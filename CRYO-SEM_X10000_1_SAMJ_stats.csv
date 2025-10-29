@@ -1,0 +1,2 @@
+dataset_label,file_label,filename_full,px_size_um,mean_Off_hist_um,poresize_single_um,pore1_double_um,pore2_double_um,PoreCombined_double_um,fracAmp1,fracAmp2,Poresize_Weitz_um,gof_single_R2,gof_double_R2,n_voids
+CRYO-SEM X10000 [1],SAMJ,C:\Users\walsh\Downloads\CRYO-SEM Accuracy INTERNAL\CRYO-SEM X10000\CRYO-SEM X10000 [1]\SAMJ.tif,0.00934375003241113,1.54439150245013,0.967188955611576,0.253124703744018,2.47884387258415,0.229671975846389,0.743102876243423,0.256897123756577,NaN,0.66510781456478,0.75503103785289,1720

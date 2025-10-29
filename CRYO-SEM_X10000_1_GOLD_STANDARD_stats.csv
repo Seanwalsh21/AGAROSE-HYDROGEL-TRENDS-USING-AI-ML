@@ -1,0 +1,2 @@
+dataset_label,file_label,filename_full,px_size_um,mean_Off_hist_um,poresize_single_um,pore1_double_um,pore2_double_um,PoreCombined_double_um,fracAmp1,fracAmp2,Poresize_Weitz_um,gof_single_R2,gof_double_R2,n_voids
+CRYO-SEM X10000 [1],GOLD STANDARD,C:\Users\walsh\Downloads\CRYO-SEM Accuracy INTERNAL\CRYO-SEM X10000\CRYO-SEM X10000 [1]\GOLD STANDARD.tif,0.00934375003241113,0.422646180652607,0.33479925468183,0.334796393618964,-0.106129011705484,-0.155385565182116,1,6.58870116431981e-17,NaN,0.967254927379967,0.967259098895056,4819

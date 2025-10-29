@@ -1,0 +1,2 @@
+method,n_tiles,gold_pore_frac_mean,pred_pore_frac_mean,bias_mean(pred-gold),ci95_low,ci95_high,bias_sd
+FREEHAND,81,0.3379539207175926,0.1440700954861111,-0.19388382523148148,-0.2357702938126929,-0.14999547887731482,0.196012938938731

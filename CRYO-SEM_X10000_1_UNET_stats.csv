@@ -1,0 +1,2 @@
+dataset_label,file_label,filename_full,px_size_um,mean_Off_hist_um,poresize_single_um,pore1_double_um,pore2_double_um,PoreCombined_double_um,fracAmp1,fracAmp2,Poresize_Weitz_um,gof_single_R2,gof_double_R2,n_voids
+CRYO-SEM X10000 [1],UNET,C:\Users\walsh\Downloads\CRYO-SEM Accuracy INTERNAL\CRYO-SEM X10000\CRYO-SEM X10000 [1]\UNET.tif,0.00934375003241113,0.110911802776525,0.117188132761941,0.205902238026123,0.206453211244088,0.103088678270339,0.501355502643799,0.498644497356201,NaN,0.882979741842575,0.898074074908514,10536

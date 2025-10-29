@@ -1,0 +1,10 @@
+Metric,Value
+Total Junctions,0.0
+Total Path Segments,1.0
+Mean Path Length (µm),0.225
+Max Path Length (µm),0.225
+Min Path Length (µm),0.225
+µm per pixel (used),0.093141
+Dilation radius (px),6.0
+Head kept for fit (%),100.0
+Min branch used (µm),0.0

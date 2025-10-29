@@ -1,0 +1,6 @@
+Image: C:/Users/walsh/Downloads/SAMJ_Analysis_Results (1)/Cryo/Cryo-SEM 10000x/CRYO-SEM pp x10000a.tif
+Start(ms): 1.7616E12
+PixelSize_nm_per_px: 0
+
+AnalysisTime_s=10.058
+

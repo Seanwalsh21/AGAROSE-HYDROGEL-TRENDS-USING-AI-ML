@@ -1,0 +1,2 @@
+dataset_label,file_label,filename_full,px_size_um,mean_Off_hist_um,poresize_single_um,pore1_double_um,pore2_double_um,PoreCombined_double_um,fracAmp1,fracAmp2,Poresize_Weitz_um,gof_single_R2,gof_double_R2,n_voids
+CRYO-SEM X10000 [1],PORED2,C:\Users\walsh\Downloads\CRYO-SEM Accuracy INTERNAL\CRYO-SEM X10000\CRYO-SEM X10000 [1]\PORED2.tif,0.00934375003241113,1.15982792860748,1.20990314700294,1.7049102755174,1.69451422451151,0.849848176759185,0.495084140697147,0.504915859302853,NaN,0.761727822178015,0.763343901208409,2105
