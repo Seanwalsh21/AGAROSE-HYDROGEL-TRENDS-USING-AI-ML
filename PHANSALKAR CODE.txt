@@ -1,0 +1,113 @@
+macro "Cryo-SEM Pore Analysis (Single Image)" {
+    // Get current directory and navigate to project root
+    scriptDir = getInfo("macro.filepath");
+    if (scriptDir != "") {
+        scriptDir = File.getDirectory(scriptDir);
+    } else {
+        exit("Cannot determine script directory. Please save the macro file first.");
+    }
+    
+    // Navigate to project root (go back to AGAROSE-HYDROGEL-TRENDS-USING-AI-ML)
+    projectRoot = scriptDir;
+    while (!endsWith(projectRoot, "AGAROSE-HYDROGEL-TRENDS-USING-AI-ML" + File.separator)) {
+        parentDir = File.getParent(projectRoot);
+        if (parentDir == projectRoot || parentDir == "") {
+            // Fallback if we can't find the project root
+            projectRoot = "C:" + File.separator + "Users" + File.separator + "walsh" + File.separator + "Documents" + File.separator + "GitHub" + File.separator + "AGAROSE-HYDROGEL-TRENDS-USING-AI-ML" + File.separator;
+            break;
+        }
+        projectRoot = parentDir + File.separator;
+    }
+    
+    // Build image path
+    imagePath = projectRoot + "DATA AUGMENTATION" + File.separator + "CRYO-SEM pp x30000a.tif";
+    
+    // Check if file exists
+    if (!File.exists(imagePath)) {
+        exit("Image file not found at: " + imagePath);
+    }
+    
+    open(imagePath);
+    originalTitle = getTitle();
+    baseTitle = File.nameWithoutExtension;
+    
+    // Ask for scale changes every time we adjust the SEM
+    pixelsPerMicron = getNumber("Enter pixels per µm for this image:", 107.0);
+    pixelSize = 1 / pixelsPerMicron;
+    
+    // Create output base directory
+    outputBaseDir = projectRoot + "OUTPUT" + File.separator;
+    File.makeDirectory(outputBaseDir);
+    
+    // Array of threshold methods to process
+    methods = newArray("Otsu", "Phansalkar", "Sauvola", "Niblack");
+    
+    // Create output folders for each method
+    for (i = 0; i < methods.length; i++) {
+        methodDir = outputBaseDir + methods[i] + File.separator;
+        File.makeDirectory(methodDir);
+    }
+    
+    // Process image with each threshold method
+    for (i = 0; i < methods.length; i++) {
+        method = methods[i];
+        outputDir = outputBaseDir + method + File.separator;
+        
+        // Duplicate original image for each method
+        selectWindow(originalTitle);
+        run("Duplicate...", "title=temp");
+        
+        // Need to set scale first or measurements are meaningless
+        run("Set Scale...", "distance=1 known=" + pixelSize + " pixel=1 unit=µm");
+        
+        // Convert to 8-bit some of our SEM images are 16-bit
+        run("8-bit");
+        
+        // Boost contrast a bit helps with threshold detection
+        run("Enhance Contrast", "saturated=0.35");
+        
+        // Apply threshold based on method
+        run("Auto Local Threshold", "method=" + method + " radius=15 parameter_1=0 parameter_2=0");
+        
+        // Pores need to be black not white in the binary
+        setOption("BlackBackground", false);
+        run("Make Binary");
+        
+        // Separate overlapping pores watershed splits them
+        run("Watershed");
+        
+        // Set up measurements we want
+        run("Set Measurements...", "area centroid perimeter shape feret's fit redirect=None decimal=3");
+        
+        // Only count pores >0.5 µm² smaller stuff is probably noise
+        run("Analyze Particles...", "size=0.5-Infinity show=Overlay display clear include add");
+        
+        // Save results
+        if (nResults > 0) {
+            // Save results table
+            saveAs("Results", outputDir + baseTitle + "_" + method + "_Results.csv");
+            
+            // Save overlay image
+            selectWindow("temp");
+            saveAs("Tiff", outputDir + baseTitle + "_" + method + "_Overlay.tif");
+            
+            print(method + ": Found " + nResults + " pores in " + originalTitle);
+        } else {
+            print(method + ": No pores detected");
+        }
+        
+        // Close temporary windows
+        close("temp");
+        close("Results");
+        if (isOpen("ROI Manager")) {
+            selectWindow("ROI Manager");
+            run("Close");
+        }
+    }
+    
+    // Close original image
+    selectWindow(originalTitle);
+    close();
+    
+    print("Processing complete! Results saved in: " + outputBaseDir);
+}

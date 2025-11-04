@@ -1,0 +1,189 @@
+macro "Watershed Pore Analysis (Multiple Methods)" {
+    // Get current directory and navigate to project root
+    scriptDir = getInfo("macro.filepath");
+    if (scriptDir != "") {
+        scriptDir = File.getDirectory(scriptDir);
+    } else {
+        exit("Cannot determine script directory. Please save the macro file first.");
+    }
+    
+    // Navigate to project root (go back to AGAROSE-HYDROGEL-TRENDS-USING-AI-ML)
+    projectRoot = scriptDir;
+    while (!endsWith(projectRoot, "AGAROSE-HYDROGEL-TRENDS-USING-AI-ML" + File.separator)) {
+        parentDir = File.getParent(projectRoot);
+        if (parentDir == projectRoot || parentDir == "") {
+            // Fallback if we can't find the project root
+            projectRoot = "C:" + File.separator + "Users" + File.separator + "walsh" + File.separator + "Documents" + File.separator + "GitHub" + File.separator + "AGAROSE-HYDROGEL-TRENDS-USING-AI-ML" + File.separator;
+            break;
+        }
+        projectRoot = parentDir + File.separator;
+    }
+    
+    // Build image path
+    openPath = projectRoot + "DATA AUGMENTATION" + File.separator + "CRYO-SEM pp x30000a.tif";
+    
+    // Check if file exists
+    if (!File.exists(openPath)) {
+        exit("Image file not found at: " + openPath);
+    }
+    
+    open(openPath);
+    originalname = getTitle();
+    baseTitle = File.nameWithoutExtension;
+    
+    // Create output base directory
+    outputBaseDir = projectRoot + "OUTPUT" + File.separator;
+    File.makeDirectory(outputBaseDir);
+    
+    // Array of threshold methods to process
+    methods = newArray("Otsu", "Phansalkar", "Sauvola", "Niblack");
+    
+    // Create output folders for each method
+    for (i = 0; i < methods.length; i++) {
+        methodDir = outputBaseDir + methods[i] + File.separator;
+        File.makeDirectory(methodDir);
+    }
+    
+    run("Options...", "iterations=1 count=1");
+    run("8-bit");
+    
+    // Process with each threshold method
+    for (m = 0; m < methods.length; m++) {
+        method = methods[m];
+        saveDir = outputBaseDir + method + File.separator;
+        
+        print("Processing with " + method + " threshold...");
+        
+        // Duplicate for this method
+        selectWindow(originalname);
+        run("Duplicate...", "title=Workable_Copy");
+        
+        // Threshold - automatic for each method
+        selectWindow("Workable_Copy");
+        setOption("BlackBackground", false);
+        
+        // Apply auto threshold based on method
+        if (method == "Otsu") {
+            setAutoThreshold("Otsu dark");
+        } else if (method == "Phansalkar") {
+            // Phansalkar is local, so we use a similar global method
+            setAutoThreshold("Triangle dark");
+        } else if (method == "Sauvola") {
+            setAutoThreshold("Mean dark");
+        } else if (method == "Niblack") {
+            setAutoThreshold("MinError dark");
+        }
+        
+        run("Convert to Mask");
+        
+        // Clean up mask
+        selectWindow("Workable_Copy");
+        run("Fill Holes");
+        run("Open");
+        run("Erode");
+        run("Dilate");
+        
+        // Distance map
+        selectWindow("Workable_Copy");
+        run("Chamfer Distance Map", "distances=[Quasi-Euclidean (1,1.41)] output=[16 bits] normalize");
+        rename("Euclid");
+        
+        // Find maxima
+        selectWindow("Euclid");
+        run("Extended Min & Max", "operation=[Extended Maxima] dynamic=10 connectivity=4");
+        rename("Maxima");
+        
+        // Watershed
+        run("Marker-controlled Watershed", "input=Euclid marker=Maxima mask=Workable_Copy compactness=0 binary calculate use");
+        
+        // Make binary watershed result
+        selectWindow("Euclid-watershed");
+        run("Duplicate...", "title=WatershedBinary");
+        run("8-bit");
+        setThreshold(1, 255);
+        run("Convert to Mask");
+        
+        // Top left corner for size estimation (only for first method)
+        if (m == 0) {
+            selectWindow("WatershedBinary"); 
+            w = getWidth();
+            h = getHeight();
+            makeRectangle(0, 0, w/2, h/2);
+            run("Duplicate...", "title=TopLeft_Quadrant");
+            
+            maxSize = getNumber("Max particle size:", 10);
+            
+            if (roiManager("count") > 0) roiManager("delete");
+            
+            setOption("BlackBackground", false);
+            selectWindow("TopLeft_Quadrant");
+            run("Set Measurements...", "area redirect=None decimal=3");
+            run("Analyze Particles...", "size=0-" + maxSize + " add clear");
+            
+            selectWindow(originalname); setLocation(50, 100);
+            selectWindow("TopLeft_Quadrant"); setLocation(700, 100);
+            
+            waitForUser("Delete bad ROIs in ROI Manager, then OK");
+            
+            // Get min area from curated ROIs
+            n = roiManager("count");
+            if (n < 1) exit("No ROIs left");
+            
+            minArea = 999999;
+            for (i = 0; i < n; i++) {
+                roiManager("Select", i);
+                run("Measure");
+                a = getResult("Area", nResults() - 1);
+                if (a < minArea) minArea = a;
+            }
+            run("Clear Results");
+            
+            close("TopLeft_Quadrant");
+        }
+        
+        // Final analysis
+        run("Set Measurements...", "area centroid perimeter fit shape feret's redirect=None decimal=3");
+        selectWindow("WatershedBinary");
+        run("Select None");
+        run("Analyze Particles...", "size=" + minArea + "-Infinity show=Nothing display");
+        print(method + " - Min pore area: " + minArea);
+        
+        // Save results for this method
+        name = baseTitle;
+        
+        if (nResults() > 0) {
+            saveAs("Results", saveDir + name + "_" + method + "_Pore_Measurements.csv");
+        }
+        
+        selectWindow("Workable_Copy");
+        saveAs("Tiff", saveDir + name + "_" + method + "_Workable_Copy.tif");
+        close();
+        
+        selectWindow("Maxima");
+        saveAs("Tiff", saveDir + name + "_" + method + "_Maxima.tif");
+        close();
+        
+        selectWindow("Euclid");
+        saveAs("Tiff", saveDir + name + "_" + method + "_Euclid.tif");
+        close();
+        
+        selectWindow("Euclid-watershed");
+        saveAs("Tiff", saveDir + name + "_" + method + "_Watershed.tif");
+        close();
+        
+        selectWindow("WatershedBinary");
+        saveAs("Tiff", saveDir + name + "_" + method + "_WatershedBinary.tif");
+        close();
+        
+        roiManager("Reset");
+        run("Clear Results");
+        
+        print(method + " processing complete!");
+    }
+    
+    // Close original image
+    selectWindow(originalname);
+    close();
+    
+    print("All methods processed! Results saved in: " + outputBaseDir);
+}
